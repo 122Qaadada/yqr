@@ -11,8 +11,9 @@ const checks = [
   [css.includes(".motion-preload [data-motion-card]"), "CSS must hide scroll animation cards before GSAP loads"],
   [motion.includes('root.classList.remove("motion-preload")'), "motion hook must remove motion-preload after GSAP sets initial states"],
   [motion.includes('const heroTitleSelector = ".heroTitleLine"'), "motion hook must keep hero title reveal targets explicit"],
-  [motion.includes("autoAlpha: 1") && motion.includes("revealHeroTitle"), "motion hook must force hero title lines visible after the opening animation"],
-  [motion.includes("gsap.delayedCall") && motion.includes("revealHeroTitle"), "motion hook must include a delayed hero title visibility fallback"],
+  [motion.includes("gsap.set(heroTitleSelector") && motion.includes("autoAlpha: 0") && motion.includes("y: 34"), "motion hook must stage hero title lines with the same fade/slide setup as other hero text"],
+  [motion.includes("autoAlpha: 1") && motion.includes("y: 0") && motion.includes("stagger"), "motion hook must reveal hero title lines through the opening timeline"],
+  [!motion.includes("gsap.delayedCall") && !motion.includes("revealHeroTitle"), "motion hook must not force hero title lines visible outside the opening timeline"],
 ];
 
 const failed = checks.filter(([passed]) => !passed);

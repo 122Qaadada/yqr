@@ -29,15 +29,6 @@ export function usePortfolioMotion() {
       gsap.registerPlugin(ScrollTrigger);
 
       ctx = gsap.context(() => {
-        const revealHeroTitle = () => {
-          gsap.set(heroTitleSelector, {
-            autoAlpha: 1,
-            clipPath: "inset(0% 0% 0% 0%)",
-            yPercent: 0,
-            scaleY: 1,
-            clearProps: "transform",
-          });
-        };
 
         gsap.set(".openingCurtain", {
           autoAlpha: 1,
@@ -45,10 +36,7 @@ export function usePortfolioMotion() {
         });
         gsap.set(heroTitleSelector, {
           autoAlpha: 0,
-          clipPath: "inset(100% 0% 0% 0%)",
-          yPercent: 72,
-          scaleY: 0.72,
-          transformOrigin: "50% 100%",
+          y: 34,
         });
         gsap.set(heroIntroSelector, {
           autoAlpha: 0,
@@ -105,7 +93,7 @@ export function usePortfolioMotion() {
           defaults: {
             ease: "power4.out",
           },
-          onComplete: revealHeroTitle,
+
         });
 
         opening
@@ -127,14 +115,11 @@ export function usePortfolioMotion() {
             heroTitleSelector,
             {
               autoAlpha: 1,
-              clipPath: "inset(0% 0% 0% 0%)",
-              yPercent: 0,
-              scaleY: 1,
-              duration: 1.08,
-              stagger: 0.14,
-              ease: "expo.out",
+              y: 0,
+              duration: 1.15,
+              stagger: 0.12,
             },
-            0.24,
+            0.82,
           )
           .to(
             heroIntroSelector,
@@ -147,7 +132,6 @@ export function usePortfolioMotion() {
             1.18,
           );
 
-        gsap.delayedCall(3.8, revealHeroTitle);
 
         gsap.to(".heroVideo", {
           yPercent: 8,

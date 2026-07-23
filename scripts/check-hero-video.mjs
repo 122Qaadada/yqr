@@ -327,7 +327,10 @@ const checks = [
       styles.includes(".heroTitleLine") &&
       motionSource.includes(".openingCurtain") &&
       motionSource.includes(".heroTitleLine") &&
-      motionSource.includes("scaleY"),
+      motionSource.includes("autoAlpha") &&
+      motionSource.includes("y: 34") &&
+      !motionSource.includes("revealHeroTitle") &&
+      !motionSource.includes("gsap.delayedCall"),
   },
   {
     label: "Sections animate with heading-first entrance and staggered cards",

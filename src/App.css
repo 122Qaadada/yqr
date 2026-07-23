@@ -1193,9 +1193,9 @@ a {
   }
 
   .motion-preload .heroTitleLine {
-    clip-path: inset(100% 0% 0% 0%);
-    transform: translateY(118%) scaleY(0.58);
-    transform-origin: 50% 100%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(34px);
   }
 
   .motion-preload [data-motion='hero-kicker'],
