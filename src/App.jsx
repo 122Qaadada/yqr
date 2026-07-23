@@ -158,7 +158,7 @@ function App() {
   return (
     <>
       <main>
-        <Hero />
+        <Hero isBackgroundPaused={Boolean(activeProject)} />
         <About />
         <Projects onPlayProject={setActiveProject} />
         <Strengths />
@@ -234,7 +234,7 @@ function SectionRays() {
   );
 }
 
-function Hero() {
+function Hero({ isBackgroundPaused }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -244,17 +244,32 @@ function Hero() {
       return undefined;
     }
 
-    const slowPlayback = () => {
-      video.playbackRate = 0.55;
+    const smoothPlayback = () => {
+      video.playbackRate = 0.85;
     };
 
-    slowPlayback();
-    video.addEventListener("loadedmetadata", slowPlayback);
+    smoothPlayback();
+    video.addEventListener("loadedmetadata", smoothPlayback);
 
     return () => {
-      video.removeEventListener("loadedmetadata", slowPlayback);
+      video.removeEventListener("loadedmetadata", smoothPlayback);
     };
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    if (isBackgroundPaused) {
+      video.pause();
+      return;
+    }
+
+    video.play().catch(() => undefined);
+  }, [isBackgroundPaused]);
 
   return (
     <section className="hero" id="home">
@@ -265,9 +280,9 @@ function Hero() {
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="auto"
         fetchPriority="high"
-        poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Crect width='1600' height='900' fill='%23070a0f'/%3E%3Cpath d='M0 580C220 470 360 720 590 560S880 200 1130 310s290 190 470 90v500H0Z' fill='%230b3236'/%3E%3Ccircle cx='1180' cy='310' r='180' fill='%2316464d'/%3E%3C/svg%3E"
+        poster="/media/hero-earth-poster.jpg"
       >
         <source src="/media/hero-earth.mp4" type="video/mp4" />
       </video>

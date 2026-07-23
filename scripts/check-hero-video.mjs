@@ -9,6 +9,7 @@ const packageJson = readFileSync(new URL("../package.json", import.meta.url), "u
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = join(scriptDir, "..");
 const heroVideoPath = new URL("../public/media/hero-earth.mp4", import.meta.url);
+const heroPosterPath = new URL("../public/media/hero-earth-poster.jpg", import.meta.url);
 const projectVideoPath = new URL("../public/media/frzmv01-project.mp4", import.meta.url);
 const projectCoverPath = new URL("../public/media/frzmv01-cover.png", import.meta.url);
 const projectOptimizedCoverPath = new URL("../public/media/frzmv01-cover.jpg", import.meta.url);
@@ -85,11 +86,13 @@ const checks = [
   {
     label: "Media assets stay within portfolio performance budgets",
     pass:
-      fileSizeMb(heroVideoPath) <= 16 &&
+      fileSizeMb(heroVideoPath) <= 3.5 &&
+      existsSync(heroPosterPath) &&
+      fileSizeMb(heroPosterPath) <= 0.45 &&
       fileSizeMb(fifthProjectVideoPath) <= 120 &&
       existsSync(projectOptimizedCoverPath) &&
       fileSizeMb(projectOptimizedCoverPath) <= 0.45 &&
-      publicMediaPayloadMb() <= 125 &&
+      publicMediaPayloadMb() <= 72 &&
       !existsSync(projectCoverPath) &&
       !existsSync(unusedHeroSourcePath) &&
       !existsSync(unusedHeroInterpolatedPath) &&
@@ -97,10 +100,11 @@ const checks = [
       !existsSync(unusedSicilyCoverPath),
   },
   {
-    label: "Hero video avoids eager full download on first paint",
+    label: "Hero video shows immediately with a real lightweight poster",
     pass:
-      source.includes('preload="metadata"') &&
-      !source.includes('preload="auto"') &&
+      source.includes('preload="auto"') &&
+      source.includes('poster="/media/hero-earth-poster.jpg"') &&
+      !source.includes('poster="data:image/svg+xml') &&
       source.includes('fetchPriority="high"'),
   },
   {
@@ -115,12 +119,21 @@ const checks = [
     pass: /const\s+videoRef\s*=\s*useRef\(null\);/.test(source),
   },
   {
-    label: "Hero slows playback to 0.55",
-    pass: /playbackRate\s*=\s*0\.55/.test(source),
+    label: "Hero keeps background playback smooth",
+    pass: /playbackRate\s*=\s*0\.85/.test(source),
   },
   {
     label: "Hero video element uses the ref",
     pass: /<video[\s\S]*ref=\{videoRef\}/.test(source),
+  },
+  {
+    label: "Hero pauses background video while project video modal is open",
+    pass:
+      source.includes("<Hero isBackgroundPaused={Boolean(activeProject)} />") &&
+      source.includes("function Hero({ isBackgroundPaused })") &&
+      source.includes("if (isBackgroundPaused)") &&
+      source.includes("video.pause()") &&
+      source.includes("video.play().catch"),
   },
   {
     label: "Hero uses the local Earth video asset",
@@ -642,15 +655,15 @@ const failed = checks.filter((check) => !check.pass);
 if (failed.length === 0) {
   const videoInfo = inspectVideo(fileURLToPath(heroVideoPath));
 
-  if (videoInfo.width < 3840) {
+  if (videoInfo.width > 1920) {
     failed.push({
-      label: `Hero video width is not ultra-clear: ${videoInfo.width} < 3840`,
+      label: `Hero video is too large for smooth first paint: ${videoInfo.width} > 1920`,
     });
   }
 
-  if (videoInfo.fps < 55) {
+  if (videoInfo.fps < 24 || videoInfo.fps > 31) {
     failed.push({
-      label: `Hero video frame rate is too low: ${videoInfo.fps.toFixed(2)} < 55`,
+      label: `Hero video frame rate should be web-friendly 24-30fps: ${videoInfo.fps.toFixed(2)}`,
     });
   }
 
@@ -768,6 +781,7 @@ function publicMediaPayloadMb() {
   const mediaDir = new URL("../public/media/", import.meta.url);
   const files = [
     heroVideoPath,
+    heroPosterPath,
     projectVideoPath,
     projectOptimizedCoverPath,
     secondProjectVideoPath,
