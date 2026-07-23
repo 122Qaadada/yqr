@@ -424,9 +424,21 @@ const checks = [
       source.includes("controls") &&
       source.includes('preload="metadata"') &&
       source.includes("<source src={project.video} type=\"video/mp4\" />") &&
+      source.includes("videoRef") &&
+      source.includes("handleSeekVideo") &&
+      source.includes("seekTrackRef") &&
+      source.includes("handleSeekTrackPointerDown") &&
+      source.includes("video.currentTime = nextTime") &&
+      source.includes('className="videoSeekTrack"') &&
+      source.includes("onInput={handleSeekVideo}") &&
+      source.includes('className="videoSeekSlider"') &&
+      source.includes('type="range"') &&
       !source.includes('target={project.video ? "_blank" : undefined}') &&
       styles.includes(".videoModalBackdrop") &&
-      styles.includes(".videoModalPlayer"),
+      styles.includes(".videoModalPlayer") &&
+      styles.includes(".videoSeekSlider") &&
+      styles.includes(".videoSeekTrack") &&
+      styles.includes(".videoSeekFill"),
   },  {
     label: "AI short drama project title mentions domestic and overseas production",
     pass:

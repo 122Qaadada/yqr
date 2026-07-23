@@ -1145,6 +1145,49 @@ a {
   aspect-ratio: 16 / 9;
 }
 
+.videoSeekBar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px 0;
+  color: rgba(232, 220, 248, 0.72);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.videoSeekTrack {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  cursor: pointer;
+}
+
+.videoSeekFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-violet), #f7f1ff);
+  pointer-events: none;
+}
+
+.videoSeekSlider {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.videoSeekSlider:disabled {
+  cursor: wait;
+  opacity: 0.42;
+}
+
 .videoModalMeta {
   padding: 16px 24px 22px;
 }

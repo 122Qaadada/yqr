@@ -528,9 +528,90 @@ function Projects({ onPlayProject }) {
 }
 
 function VideoPlayerModal({ project, onClose }) {
+  const videoRef = useRef(null);
+  const seekTrackRef = useRef(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+
+  useEffect(() => {
+    setDuration(0);
+    setCurrentTime(0);
+    setIsSeeking(false);
+  }, [project?.video]);
+
   if (!project) {
     return null;
   }
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+  };
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || isSeeking) {
+      return;
+    }
+
+    setCurrentTime(video.currentTime || 0);
+  };
+
+  const seekToVideo = (seekTime) => {
+    const video = videoRef.current;
+    const nextTime = Math.min(Math.max(seekTime, 0), duration || seekTime);
+    setCurrentTime(nextTime);
+
+    if (video) {
+      video.currentTime = nextTime;
+    }
+  };
+
+  const handleSeekVideo = (event) => {
+    const seekTime = Number(event.target.value);
+    seekToVideo(seekTime);
+  };
+
+  const handleSeekTrack = (clientX) => {
+    const track = seekTrackRef.current;
+    if (!track || !duration) {
+      return;
+    }
+
+    const rect = track.getBoundingClientRect();
+    const progress = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+    seekToVideo(progress * duration);
+  };
+
+  const handleSeekTrackPointerDown = (event) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setIsSeeking(true);
+    handleSeekTrack(event.clientX);
+  };
+
+  const handleSeekTrackPointerMove = (event) => {
+    if (!isSeeking) {
+      return;
+    }
+
+    handleSeekTrack(event.clientX);
+  };
+
+  const handleSeekTrackPointerUp = (event) => {
+    if (isSeeking) {
+      handleSeekTrack(event.clientX);
+    }
+
+    setIsSeeking(false);
+  };
+
+  const progressPercent = duration ? Math.min((currentTime / duration) * 100, 100) : 0;
 
   return (
     <div className="videoModalBackdrop" role="presentation" onClick={onClose}>
@@ -538,7 +619,7 @@ function VideoPlayerModal({ project, onClose }) {
         className="videoModal"
         role="dialog"
         aria-modal="true"
-        aria-label={`播放 ${project.title}`}
+        aria-label={`鎾斁 ${project.title}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="videoModalHeader">
@@ -546,17 +627,67 @@ function VideoPlayerModal({ project, onClose }) {
             <p>{project.tag}</p>
             <h3>{project.title}</h3>
           </div>
-          <button className="videoModalClose" type="button" onClick={onClose} aria-label="关闭视频">
+          <button className="videoModalClose" type="button" onClick={onClose} aria-label="鍏抽棴瑙嗛">
             <X size={22} />
           </button>
         </div>
-        <video className="videoModalPlayer" controls preload="metadata" playsInline poster={project.cover}>
+        <video
+          ref={videoRef}
+          className="videoModalPlayer"
+          controls
+          preload="metadata"
+          playsInline
+          poster={project.cover}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+        >
           <source src={project.video} type="video/mp4" />
         </video>
+        <div className="videoSeekBar" aria-label="视频进度控制">
+          <span>{formatVideoTime(currentTime)}</span>
+          <div
+            ref={seekTrackRef}
+            className="videoSeekTrack"
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            tabIndex={duration ? 0 : -1}
+            onPointerDown={handleSeekTrackPointerDown}
+            onPointerMove={handleSeekTrackPointerMove}
+            onPointerUp={handleSeekTrackPointerUp}
+            onPointerCancel={() => setIsSeeking(false)}
+          >
+            <span className="videoSeekFill" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <input
+            className="videoSeekSlider"
+            type="range"
+            min="0"
+            max={duration || 0}
+            step="0.1"
+            value={Math.min(currentTime, duration || currentTime)}
+            onInput={handleSeekVideo}
+            onChange={handleSeekVideo}
+            disabled={!duration}
+            aria-label="拖动视频进度"
+          />
+          <span>{formatVideoTime(duration)}</span>
+        </div>
         <p className="videoModalMeta">{project.meta}</p>
       </div>
     </div>
   );
+}
+function formatVideoTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return "0:00";
+  }
+
+  const totalSeconds = Math.floor(seconds);
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${remainingSeconds}`;
 }
 function Strengths() {
   return (
