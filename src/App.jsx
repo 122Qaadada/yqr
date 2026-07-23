@@ -8,6 +8,7 @@ import {
   Play,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
 import SideRays from "./components/SideRays";
 import BorderGlow from "./components/BorderGlow";
@@ -130,16 +131,39 @@ const strengths = [
 
 function App() {
   usePortfolioMotion();
+  const [activeProject, setActiveProject] = useState(null);
+
+  useEffect(() => {
+    if (!activeProject) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setActiveProject(null);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeProject]);
 
   return (
     <>
       <main>
         <Hero />
         <About />
-        <Projects />
+        <Projects onPlayProject={setActiveProject} />
         <Strengths />
         <Contact />
       </main>
+      <VideoPlayerModal project={activeProject} onClose={() => setActiveProject(null)} />
       <FloatingNav />
     </>
   );
@@ -426,7 +450,7 @@ function About() {
   );
 }
 
-function Projects() {
+function Projects({ onPlayProject }) {
   return (
     <section className="section projects" id="projects" data-motion-section>
       <SectionRays />
@@ -478,11 +502,14 @@ function Projects() {
                   <a
                     className="projectPlayLink"
                     href={project.video || "#contact"}
-                    target={project.video ? "_blank" : undefined}
-                    rel={project.video ? "noreferrer" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onPlayProject(project);
+                    }}
+                    aria-haspopup="dialog"
                     aria-label={`播放 ${project.title}`}
                   >
-                    <ArrowUpRight size={21} />
+                    <Play size={21} />
                   </a>
                 ) : null}
                 <a href="#contact" aria-label={`联系了解 ${project.title}`}>
@@ -500,6 +527,37 @@ function Projects() {
   );
 }
 
+function VideoPlayerModal({ project, onClose }) {
+  if (!project) {
+    return null;
+  }
+
+  return (
+    <div className="videoModalBackdrop" role="presentation" onClick={onClose}>
+      <div
+        className="videoModal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`播放 ${project.title}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="videoModalHeader">
+          <div>
+            <p>{project.tag}</p>
+            <h3>{project.title}</h3>
+          </div>
+          <button className="videoModalClose" type="button" onClick={onClose} aria-label="关闭视频">
+            <X size={22} />
+          </button>
+        </div>
+        <video className="videoModalPlayer" controls preload="metadata" playsInline poster={project.cover}>
+          <source src={project.video} type="video/mp4" />
+        </video>
+        <p className="videoModalMeta">{project.meta}</p>
+      </div>
+    </div>
+  );
+}
 function Strengths() {
   return (
     <section className="section strengths" id="strengths" data-motion-section>

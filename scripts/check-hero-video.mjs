@@ -353,7 +353,7 @@ const checks = [
       motionSource.includes("scrub"),
   },
   {
-    label: "First selected project uses a still cover and the arrow opens the FRZMV video",
+    label: "First selected project uses a still cover and the in-page FRZMV player",
     pass:
       existsSync(projectVideoPath) &&
       existsSync(projectOptimizedCoverPath) &&
@@ -362,14 +362,12 @@ const checks = [
       source.includes('className="projectCover"') &&
       source.includes('src={project.cover}') &&
       !source.includes('className="projectVideo"') &&
-      !source.includes("<source src={project.video}") &&
       /href=\{project\.video \|\| "#contact"\}/m.test(source) &&
-      /target=\{project\.video \? "_blank" : undefined\}/m.test(source) &&
       styles.includes(".hasProjectCover") &&
       /\.projectCover\s*\{[\s\S]*?object-fit:\s*cover;/m.test(styles),
   },
   {
-    label: "Second selected project uses an extracted M8W4D3 cover and arrow video link",
+    label: "Second selected project uses an extracted M8W4D3 cover and in-page player link",
     pass:
       existsSync(secondProjectVideoPath) &&
       existsSync(secondProjectCoverPath) &&
@@ -380,7 +378,7 @@ const checks = [
       !source.includes('className="projectVideo"'),
   },
   {
-    label: "Third selected project uses an extracted Sicily cover and arrow video link",
+    label: "Third selected project uses an extracted Sicily cover and in-page player link",
     pass:
       existsSync(thirdProjectVideoPath) &&
       existsSync(thirdProjectCoverPath) &&
@@ -391,7 +389,7 @@ const checks = [
       !source.includes('className="projectVideo"'),
   },
   {
-    label: "Fourth selected project uses an extracted S1C1-C3 cover and arrow video link",
+    label: "Fourth selected project uses an extracted S1C1-C3 cover and in-page player link",
     pass:
       existsSync(fourthProjectVideoPath) &&
       existsSync(fourthProjectCoverPath) &&
@@ -402,7 +400,7 @@ const checks = [
       !source.includes('className="projectVideo"'),
   },
   {
-    label: "Fifth selected project uses the corporate promo film cover and arrow video link",
+    label: "Fifth selected project uses the corporate promo film cover and in-page player link",
     pass:
       existsSync(fifthProjectVideoPath) &&
       existsSync(fifthProjectCoverPath) &&
@@ -416,6 +414,20 @@ const checks = [
       /grid-column:\s*1\s*\/\s*-1;/m.test(styles),
   },
   {
+    label: "Project videos open in an in-page seekable video player",
+    pass:
+      source.includes("activeProject") &&
+      source.includes("setActiveProject") &&
+      source.includes("function VideoPlayerModal") &&
+      source.includes("onPlayProject(project)") &&
+      source.includes("event.preventDefault()") &&
+      source.includes("controls") &&
+      source.includes('preload="metadata"') &&
+      source.includes("<source src={project.video} type=\"video/mp4\" />") &&
+      !source.includes('target={project.video ? "_blank" : undefined}') &&
+      styles.includes(".videoModalBackdrop") &&
+      styles.includes(".videoModalPlayer"),
+  },  {
     label: "AI short drama project title mentions domestic and overseas production",
     pass:
       source.includes('title: "国内外AI 短剧全流程制作"') &&
