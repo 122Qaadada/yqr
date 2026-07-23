@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 const heroIntroSelector =
   "[data-motion='hero-kicker'], [data-motion='hero-copy'], [data-motion='hero-actions'], [data-motion='hero-nav']";
+const heroTitleSelector = ".heroTitleLine";
 
 export function usePortfolioMotion() {
   useEffect(() => {
@@ -28,14 +29,25 @@ export function usePortfolioMotion() {
       gsap.registerPlugin(ScrollTrigger);
 
       ctx = gsap.context(() => {
+        const revealHeroTitle = () => {
+          gsap.set(heroTitleSelector, {
+            autoAlpha: 1,
+            clipPath: "inset(0% 0% 0% 0%)",
+            yPercent: 0,
+            scaleY: 1,
+            clearProps: "transform",
+          });
+        };
+
         gsap.set(".openingCurtain", {
           autoAlpha: 1,
           clipPath: "inset(0% 0% 0% 0%)",
         });
-        gsap.set(".heroTitleLine", {
+        gsap.set(heroTitleSelector, {
+          autoAlpha: 0,
           clipPath: "inset(100% 0% 0% 0%)",
-          yPercent: 118,
-          scaleY: 0.58,
+          yPercent: 72,
+          scaleY: 0.72,
           transformOrigin: "50% 100%",
         });
         gsap.set(heroIntroSelector, {
@@ -93,6 +105,7 @@ export function usePortfolioMotion() {
           defaults: {
             ease: "power4.out",
           },
+          onComplete: revealHeroTitle,
         });
 
         opening
@@ -111,16 +124,17 @@ export function usePortfolioMotion() {
             0.08,
           )
           .to(
-            ".heroTitleLine",
+            heroTitleSelector,
             {
+              autoAlpha: 1,
               clipPath: "inset(0% 0% 0% 0%)",
               yPercent: 0,
               scaleY: 1,
-              duration: 1.75,
-              stagger: 0.18,
+              duration: 1.08,
+              stagger: 0.14,
               ease: "expo.out",
             },
-            0.66,
+            0.24,
           )
           .to(
             heroIntroSelector,
@@ -130,8 +144,10 @@ export function usePortfolioMotion() {
               duration: 1.15,
               stagger: 0.12,
             },
-            1.1,
+            1.18,
           );
+
+        gsap.delayedCall(3.8, revealHeroTitle);
 
         gsap.to(".heroVideo", {
           yPercent: 8,
