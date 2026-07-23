@@ -425,10 +425,14 @@ const checks = [
       source.includes('preload="metadata"') &&
       source.includes("<source src={project.video} type=\"video/mp4\" />") &&
       source.includes("videoRef") &&
+      source.includes("video.load()") &&
+      source.includes("key={project.video}") &&
       source.includes("isPlaying") &&
       source.includes("toggleVideoPlayback") &&
       source.includes("seekTrackRef") &&
       source.includes("handleSeekTrackPointerDown") &&
+      source.includes("window.addEventListener(\"pointermove\"") &&
+      source.includes("window.removeEventListener(\"pointermove\"") &&
       source.includes("video.currentTime = nextTime") &&
       source.includes('className="videoPlayToggle"') &&
       source.includes('className="videoSeekTrack"') &&

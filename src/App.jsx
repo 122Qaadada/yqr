@@ -535,18 +535,23 @@ function VideoPlayerModal({ project, onClose }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isSeeking, setIsSeeking] = useState(false);
 
   const updateSeeking = (nextIsSeeking) => {
     isSeekingRef.current = nextIsSeeking;
-    setIsSeeking(nextIsSeeking);
   };
 
   useEffect(() => {
+    const video = videoRef.current;
     setDuration(0);
     setCurrentTime(0);
     setIsPlaying(false);
     updateSeeking(false);
+
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+      video.load();
+    }
   }, [project?.video]);
 
   if (!project) {
@@ -596,6 +601,9 @@ function VideoPlayerModal({ project, onClose }) {
   const handleSeekTrackPointerDown = (event) => {
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    window.addEventListener("pointermove", handleWindowSeekPointerMove);
+    window.addEventListener("pointerup", handleWindowSeekPointerUp, { once: true });
+    window.addEventListener("pointercancel", handleWindowSeekPointerCancel, { once: true });
     updateSeeking(true);
     handleSeekTrack(event.clientX);
   };
@@ -608,19 +616,40 @@ function VideoPlayerModal({ project, onClose }) {
     handleSeekTrack(event.clientX);
   };
 
-  const handleSeekTrackPointerUp = (event) => {
-    if (isSeekingRef.current) {
-      handleSeekTrack(event.clientX);
+  const finishSeek = (clientX) => {
+    if (isSeekingRef.current && Number.isFinite(clientX)) {
+      handleSeekTrack(clientX);
     }
 
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    window.removeEventListener("pointermove", handleWindowSeekPointerMove);
+    window.removeEventListener("pointerup", handleWindowSeekPointerUp);
+    window.removeEventListener("pointercancel", handleWindowSeekPointerCancel);
     updateSeeking(false);
+  };
+
+  const handleSeekTrackPointerUp = (event) => {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    finishSeek(event.clientX);
   };
 
   const handleSeekTrackPointerCancel = (event) => {
     event.currentTarget.releasePointerCapture?.(event.pointerId);
-    updateSeeking(false);
+    finishSeek(event.clientX);
   };
+
+  function handleWindowSeekPointerMove(event) {
+    if (isSeekingRef.current) {
+      handleSeekTrack(event.clientX);
+    }
+  }
+
+  function handleWindowSeekPointerUp(event) {
+    finishSeek(event.clientX);
+  }
+
+  function handleWindowSeekPointerCancel(event) {
+    finishSeek(event.clientX);
+  }
 
   const handleSeekTrackKeyDown = (event) => {
     if (!duration) {
@@ -676,6 +705,7 @@ function VideoPlayerModal({ project, onClose }) {
           </button>
         </div>
         <video
+          key={project.video}
           ref={videoRef}
           className="videoModalPlayer"
           preload="metadata"
@@ -683,6 +713,7 @@ function VideoPlayerModal({ project, onClose }) {
           poster={project.cover}
           onClick={toggleVideoPlayback}
           onLoadedMetadata={handleLoadedMetadata}
+          onDurationChange={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
