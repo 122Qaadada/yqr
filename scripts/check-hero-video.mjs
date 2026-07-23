@@ -421,22 +421,23 @@ const checks = [
       source.includes("function VideoPlayerModal") &&
       source.includes("onPlayProject(project)") &&
       source.includes("event.preventDefault()") &&
-      source.includes("controls") &&
+      !/className="videoModalPlayer"[\s\S]*?\n\s*controls\b/.test(source) &&
       source.includes('preload="metadata"') &&
       source.includes("<source src={project.video} type=\"video/mp4\" />") &&
       source.includes("videoRef") &&
-      source.includes("handleSeekVideo") &&
+      source.includes("isPlaying") &&
+      source.includes("toggleVideoPlayback") &&
       source.includes("seekTrackRef") &&
       source.includes("handleSeekTrackPointerDown") &&
       source.includes("video.currentTime = nextTime") &&
+      source.includes('className="videoPlayToggle"') &&
       source.includes('className="videoSeekTrack"') &&
-      source.includes("onInput={handleSeekVideo}") &&
-      source.includes('className="videoSeekSlider"') &&
-      source.includes('type="range"') &&
+      !source.includes('className="videoSeekSlider"') &&
       !source.includes('target={project.video ? "_blank" : undefined}') &&
       styles.includes(".videoModalBackdrop") &&
       styles.includes(".videoModalPlayer") &&
-      styles.includes(".videoSeekSlider") &&
+      styles.includes(".videoPlayToggle") &&
+      !styles.includes(".videoSeekSlider") &&
       styles.includes(".videoSeekTrack") &&
       styles.includes(".videoSeekFill"),
   },  {

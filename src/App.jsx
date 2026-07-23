@@ -5,6 +5,7 @@ import {
   Film,
   Mail,
   Phone,
+  Pause,
   Play,
   Sparkles,
   Wand2,
@@ -530,14 +531,22 @@ function Projects({ onPlayProject }) {
 function VideoPlayerModal({ project, onClose }) {
   const videoRef = useRef(null);
   const seekTrackRef = useRef(null);
+  const isSeekingRef = useRef(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
+
+  const updateSeeking = (nextIsSeeking) => {
+    isSeekingRef.current = nextIsSeeking;
+    setIsSeeking(nextIsSeeking);
+  };
 
   useEffect(() => {
     setDuration(0);
     setCurrentTime(0);
-    setIsSeeking(false);
+    setIsPlaying(false);
+    updateSeeking(false);
   }, [project?.video]);
 
   if (!project) {
@@ -551,11 +560,12 @@ function VideoPlayerModal({ project, onClose }) {
     }
 
     setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+    setCurrentTime(video.currentTime || 0);
   };
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
-    if (!video || isSeeking) {
+    if (!video || isSeekingRef.current) {
       return;
     }
 
@@ -572,11 +582,6 @@ function VideoPlayerModal({ project, onClose }) {
     }
   };
 
-  const handleSeekVideo = (event) => {
-    const seekTime = Number(event.target.value);
-    seekToVideo(seekTime);
-  };
-
   const handleSeekTrack = (clientX) => {
     const track = seekTrackRef.current;
     if (!track || !duration) {
@@ -591,12 +596,12 @@ function VideoPlayerModal({ project, onClose }) {
   const handleSeekTrackPointerDown = (event) => {
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    setIsSeeking(true);
+    updateSeeking(true);
     handleSeekTrack(event.clientX);
   };
 
   const handleSeekTrackPointerMove = (event) => {
-    if (!isSeeking) {
+    if (!isSeekingRef.current) {
       return;
     }
 
@@ -604,11 +609,50 @@ function VideoPlayerModal({ project, onClose }) {
   };
 
   const handleSeekTrackPointerUp = (event) => {
-    if (isSeeking) {
+    if (isSeekingRef.current) {
       handleSeekTrack(event.clientX);
     }
 
-    setIsSeeking(false);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    updateSeeking(false);
+  };
+
+  const handleSeekTrackPointerCancel = (event) => {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    updateSeeking(false);
+  };
+
+  const handleSeekTrackKeyDown = (event) => {
+    if (!duration) {
+      return;
+    }
+
+    const seekStep = event.shiftKey ? 10 : 5;
+    const keySeekActions = {
+      ArrowLeft: currentTime - seekStep,
+      ArrowRight: currentTime + seekStep,
+      Home: 0,
+      End: duration,
+    };
+
+    if (Object.prototype.hasOwnProperty.call(keySeekActions, event.key)) {
+      event.preventDefault();
+      seekToVideo(keySeekActions[event.key]);
+    }
+  };
+
+  const toggleVideoPlayback = () => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    if (video.paused || video.ended) {
+      video.play().catch(() => setIsPlaying(false));
+      return;
+    }
+
+    video.pause();
   };
 
   const progressPercent = duration ? Math.min((currentTime / duration) * 100, 100) : 0;
@@ -619,7 +663,7 @@ function VideoPlayerModal({ project, onClose }) {
         className="videoModal"
         role="dialog"
         aria-modal="true"
-        aria-label={`鎾斁 ${project.title}`}
+        aria-label={`Video player ${project.title}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="videoModalHeader">
@@ -627,23 +671,34 @@ function VideoPlayerModal({ project, onClose }) {
             <p>{project.tag}</p>
             <h3>{project.title}</h3>
           </div>
-          <button className="videoModalClose" type="button" onClick={onClose} aria-label="鍏抽棴瑙嗛">
+          <button className="videoModalClose" type="button" onClick={onClose} aria-label="Close video">
             <X size={22} />
           </button>
         </div>
         <video
           ref={videoRef}
           className="videoModalPlayer"
-          controls
           preload="metadata"
           playsInline
           poster={project.cover}
+          onClick={toggleVideoPlayback}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
         >
           <source src={project.video} type="video/mp4" />
         </video>
-        <div className="videoSeekBar" aria-label="视频进度控制">
+        <div className="videoSeekBar" aria-label="Video progress control">
+          <button
+            className="videoPlayToggle"
+            type="button"
+            onClick={toggleVideoPlayback}
+            aria-label={isPlaying ? "Pause video" : "Play video"}
+          >
+            {isPlaying ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}
+          </button>
           <span>{formatVideoTime(currentTime)}</span>
           <div
             ref={seekTrackRef}
@@ -652,26 +707,16 @@ function VideoPlayerModal({ project, onClose }) {
             aria-valuemin={0}
             aria-valuemax={Math.round(duration || 0)}
             aria-valuenow={Math.round(currentTime)}
+            aria-disabled={!duration}
             tabIndex={duration ? 0 : -1}
+            onKeyDown={handleSeekTrackKeyDown}
             onPointerDown={handleSeekTrackPointerDown}
             onPointerMove={handleSeekTrackPointerMove}
             onPointerUp={handleSeekTrackPointerUp}
-            onPointerCancel={() => setIsSeeking(false)}
+            onPointerCancel={handleSeekTrackPointerCancel}
           >
             <span className="videoSeekFill" style={{ width: `${progressPercent}%` }} />
           </div>
-          <input
-            className="videoSeekSlider"
-            type="range"
-            min="0"
-            max={duration || 0}
-            step="0.1"
-            value={Math.min(currentTime, duration || currentTime)}
-            onInput={handleSeekVideo}
-            onChange={handleSeekVideo}
-            disabled={!duration}
-            aria-label="拖动视频进度"
-          />
           <span>{formatVideoTime(duration)}</span>
         </div>
         <p className="videoModalMeta">{project.meta}</p>
