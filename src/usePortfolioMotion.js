@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 
+const heroIntroSelector =
+  "[data-motion='hero-kicker'], [data-motion='hero-copy'], [data-motion='hero-actions'], [data-motion='hero-nav']";
+
 export function usePortfolioMotion() {
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -8,7 +11,7 @@ export function usePortfolioMotion() {
     let isCancelled = false;
 
     if (prefersReducedMotion.matches) {
-      root.classList.remove("motion-ready");
+      root.classList.remove("motion-preload", "motion-ready");
       return undefined;
     }
 
@@ -23,164 +26,181 @@ export function usePortfolioMotion() {
       }
 
       gsap.registerPlugin(ScrollTrigger);
-      root.classList.add("motion-ready");
-      ctx = gsap.context(() => {
-      const opening = gsap.timeline({
-        defaults: {
-          ease: "power4.out",
-        },
-      });
 
-      opening
-        .set(".openingCurtain", {
+      ctx = gsap.context(() => {
+        gsap.set(".openingCurtain", {
+          autoAlpha: 1,
           clipPath: "inset(0% 0% 0% 0%)",
-        })
-        .set(".heroTitleLine", {
+        });
+        gsap.set(".heroTitleLine", {
           clipPath: "inset(100% 0% 0% 0%)",
           yPercent: 118,
           scaleY: 0.58,
           transformOrigin: "50% 100%",
-        })
-        .set("[data-motion='hero-kicker'], [data-motion='hero-copy'], [data-motion='hero-actions'], [data-motion='hero-nav']", {
+        });
+        gsap.set(heroIntroSelector, {
           autoAlpha: 0,
           y: 34,
-        })
-        .set(".heroVideo", {
+        });
+        gsap.set(".heroVideo", {
           scale: 1.045,
           transformOrigin: "50% 50%",
-        })
-        .to(".openingCurtain", {
-          clipPath: "inset(0% 0% 100% 0%)",
-          duration: 1.65,
-          ease: "expo.inOut",
-        })
-        .to(
-          ".heroVideo",
-          {
-            scale: 1,
-            duration: 2.8,
-            ease: "power3.out",
-          },
-          0.08,
-        )
-        .to(
-          ".heroTitleLine",
-          {
-            clipPath: "inset(0% 0% 0% 0%)",
-            yPercent: 0,
-            scaleY: 1,
-            duration: 1.75,
-            stagger: 0.18,
-            ease: "expo.out",
-          },
-          0.66,
-        )
-        .to(
-          "[data-motion='hero-kicker'], [data-motion='hero-copy'], [data-motion='hero-actions'], [data-motion='hero-nav']",
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 1.15,
-            stagger: 0.12,
-          },
-          1.1,
-        );
+        });
 
-      gsap.to(".heroVideo", {
-        yPercent: 8,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: 0.85,
-        },
-      });
+        document.querySelectorAll("[data-motion-section]").forEach((section) => {
+          const sectionTitle = section.querySelector("[data-motion='section-title']");
+          const sectionCopy = section.querySelectorAll("[data-motion='section-copy']");
+          const cards = section.querySelectorAll("[data-motion-card]");
 
-      document.querySelectorAll("[data-motion-section]").forEach((section) => {
-        const sectionTitle = section.querySelector("[data-motion='section-title']");
-        const sectionCopy = section.querySelectorAll("[data-motion='section-copy']");
-        const cards = section.querySelectorAll("[data-motion-card]");
+          if (sectionTitle) {
+            gsap.set(sectionTitle, {
+              autoAlpha: 0,
+              x: -180,
+              y: 42,
+              clipPath: "inset(0% 100% 0% 0%)",
+            });
+          }
 
-        const timeline = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 72%",
-            once: true,
-          },
+          if (sectionCopy.length > 0) {
+            gsap.set(sectionCopy, {
+              autoAlpha: 0,
+              y: 64,
+              clipPath: "inset(18% 0% 0% 0%)",
+            });
+          }
+
+          if (cards.length > 0) {
+            gsap.set(cards, {
+              autoAlpha: 0,
+              y: 96,
+              clipPath: "inset(16% 0% 0% 0%)",
+            });
+          }
+        });
+
+        const parallaxImages = document.querySelectorAll("[data-motion-image]");
+
+        gsap.set(parallaxImages, {
+          clipPath: "inset(18% 0% 18% 0%)",
+          scale: 1.08,
+          transformOrigin: "50% 50%",
+        });
+
+        root.classList.remove("motion-preload");
+        root.classList.add("motion-ready");
+
+        const opening = gsap.timeline({
           defaults: {
             ease: "power4.out",
           },
         });
 
-        if (sectionTitle) {
-          timeline.fromTo(
-            sectionTitle,
+        opening
+          .to(".openingCurtain", {
+            clipPath: "inset(0% 0% 100% 0%)",
+            duration: 1.65,
+            ease: "expo.inOut",
+          })
+          .to(
+            ".heroVideo",
             {
-              autoAlpha: 0,
-              x: -180,
-              y: 42,
-              clipPath: "inset(0% 100% 0% 0%)",
+              scale: 1,
+              duration: 2.8,
+              ease: "power3.out",
             },
+            0.08,
+          )
+          .to(
+            ".heroTitleLine",
             {
+              clipPath: "inset(0% 0% 0% 0%)",
+              yPercent: 0,
+              scaleY: 1,
+              duration: 1.75,
+              stagger: 0.18,
+              ease: "expo.out",
+            },
+            0.66,
+          )
+          .to(
+            heroIntroSelector,
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 1.15,
+              stagger: 0.12,
+            },
+            1.1,
+          );
+
+        gsap.to(".heroVideo", {
+          yPercent: 8,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".hero",
+            start: "top top",
+            end: "bottom top",
+            scrub: 0.85,
+          },
+        });
+
+        document.querySelectorAll("[data-motion-section]").forEach((section) => {
+          const sectionTitle = section.querySelector("[data-motion='section-title']");
+          const sectionCopy = section.querySelectorAll("[data-motion='section-copy']");
+          const cards = section.querySelectorAll("[data-motion-card]");
+
+          const timeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: "top 72%",
+              once: true,
+            },
+            defaults: {
+              ease: "power4.out",
+            },
+          });
+
+          if (sectionTitle) {
+            timeline.to(sectionTitle, {
               autoAlpha: 1,
               x: 0,
               y: 0,
               clipPath: "inset(0% 0% 0% 0%)",
               duration: 1.45,
-            },
-          );
-        }
+            });
+          }
 
-        if (sectionCopy.length > 0) {
-          timeline.fromTo(
-            sectionCopy,
-            {
-              autoAlpha: 0,
-              y: 64,
-              clipPath: "inset(18% 0% 0% 0%)",
-            },
-            {
-              autoAlpha: 1,
-              y: 0,
-              clipPath: "inset(0% 0% 0% 0%)",
-              duration: 1.12,
-              stagger: 0.1,
-            },
-            "-=0.78",
-          );
-        }
+          if (sectionCopy.length > 0) {
+            timeline.to(
+              sectionCopy,
+              {
+                autoAlpha: 1,
+                y: 0,
+                clipPath: "inset(0% 0% 0% 0%)",
+                duration: 1.12,
+                stagger: 0.1,
+              },
+              "-=0.78",
+            );
+          }
 
-        if (cards.length > 0) {
-          timeline.fromTo(
-            cards,
-            {
-              autoAlpha: 0,
-              y: 96,
-              clipPath: "inset(16% 0% 0% 0%)",
-            },
-            {
-              autoAlpha: 1,
-              y: 0,
-              clipPath: "inset(0% 0% 0% 0%)",
-              duration: 1.18,
-              stagger: 0.16,
-            },
-            "-=0.62",
-          );
-        }
-      });
+          if (cards.length > 0) {
+            timeline.to(
+              cards,
+              {
+                autoAlpha: 1,
+                y: 0,
+                clipPath: "inset(0% 0% 0% 0%)",
+                duration: 1.18,
+                stagger: 0.16,
+              },
+              "-=0.62",
+            );
+          }
+        });
 
-      const parallaxImages = document.querySelectorAll("[data-motion-image]");
-
-      parallaxImages.forEach((image) => {
-        gsap.fromTo(
-          image,
-          {
-            clipPath: "inset(18% 0% 18% 0%)",
-            scale: 1.08,
-          },
-          {
+        parallaxImages.forEach((image) => {
+          gsap.to(image, {
             clipPath: "inset(0% 0% 0% 0%)",
             scale: 1,
             duration: 1.45,
@@ -190,20 +210,19 @@ export function usePortfolioMotion() {
               start: "top 82%",
               once: true,
             },
-          },
-        );
+          });
 
-        gsap.to(image, {
-          yPercent: image.dataset.motionImage === "portrait" ? -5 : -8,
-          ease: "none",
-          scrollTrigger: {
-            trigger: image,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 0.9,
-          },
+          gsap.to(image, {
+            yPercent: image.dataset.motionImage === "portrait" ? -5 : -8,
+            ease: "none",
+            scrollTrigger: {
+              trigger: image,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.9,
+            },
+          });
         });
-      });
       });
     };
 
@@ -212,7 +231,7 @@ export function usePortfolioMotion() {
     return () => {
       isCancelled = true;
       ctx?.revert();
-      root.classList.remove("motion-ready");
+      root.classList.remove("motion-preload", "motion-ready");
     };
   }, []);
 }

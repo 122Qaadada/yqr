@@ -1181,6 +1181,59 @@ a {
   padding: 110px 0;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .motion-preload .openingCurtain {
+    opacity: 1;
+    clip-path: inset(0% 0% 0% 0%);
+  }
+
+  .motion-preload .heroVideo {
+    transform: scale(1.045);
+    transform-origin: 50% 50%;
+  }
+
+  .motion-preload .heroTitleLine {
+    clip-path: inset(100% 0% 0% 0%);
+    transform: translateY(118%) scaleY(0.58);
+    transform-origin: 50% 100%;
+  }
+
+  .motion-preload [data-motion='hero-kicker'],
+  .motion-preload [data-motion='hero-copy'],
+  .motion-preload [data-motion='hero-actions'],
+  .motion-preload [data-motion='hero-nav'] {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(34px);
+  }
+
+  .motion-preload [data-motion='section-title'] {
+    opacity: 0;
+    visibility: hidden;
+    clip-path: inset(0% 100% 0% 0%);
+    transform: translate(-180px, 42px);
+  }
+
+  .motion-preload [data-motion='section-copy'] {
+    opacity: 0;
+    visibility: hidden;
+    clip-path: inset(18% 0% 0% 0%);
+    transform: translateY(64px);
+  }
+
+  .motion-preload [data-motion-card] {
+    opacity: 0;
+    visibility: hidden;
+    clip-path: inset(16% 0% 0% 0%);
+    transform: translateY(96px);
+  }
+
+  .motion-preload [data-motion-image] {
+    clip-path: inset(18% 0% 18% 0%);
+    transform: scale(1.08);
+    transform-origin: 50% 50%;
+  }
+}
 [data-motion-card],
 [data-motion="section-title"],
 [data-motion="section-copy"],
