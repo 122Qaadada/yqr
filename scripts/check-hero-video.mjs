@@ -86,7 +86,7 @@ const checks = [
   {
     label: "Media assets stay within portfolio performance budgets",
     pass:
-      fileSizeMb(heroVideoPath) <= 4.5 &&
+      fileSizeMb(heroVideoPath) <= 3.5 &&
       existsSync(heroPosterPath) &&
       fileSizeMb(heroPosterPath) <= 0.45 &&
       fileSizeMb(fifthProjectVideoPath) <= 120 &&
@@ -660,15 +660,15 @@ const failed = checks.filter((check) => !check.pass);
 if (failed.length === 0) {
   const videoInfo = inspectVideo(fileURLToPath(heroVideoPath));
 
-  if (videoInfo.width > 1280) {
+  if (videoInfo.width > 1440) {
     failed.push({
-      label: `Hero video is too large for smooth first paint: ${videoInfo.width} > 1280`,
+      label: `Hero video is too large for smooth first paint: ${videoInfo.width} > 1440`,
     });
   }
 
-  if (videoInfo.fps < 24 || videoInfo.fps > 31) {
+  if (videoInfo.fps < 48 || videoInfo.fps > 51) {
     failed.push({
-      label: `Hero video frame rate should be web-friendly 24-30fps: ${videoInfo.fps.toFixed(2)}`,
+      label: `Hero video frame rate should be web-friendly 50fps: ${videoInfo.fps.toFixed(2)}`,
     });
   }
 
