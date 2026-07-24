@@ -86,13 +86,13 @@ const checks = [
   {
     label: "Media assets stay within portfolio performance budgets",
     pass:
-      fileSizeMb(heroVideoPath) <= 3.5 &&
+      fileSizeMb(heroVideoPath) <= 1.8 &&
       existsSync(heroPosterPath) &&
       fileSizeMb(heroPosterPath) <= 0.45 &&
       fileSizeMb(fifthProjectVideoPath) <= 120 &&
       existsSync(projectOptimizedCoverPath) &&
       fileSizeMb(projectOptimizedCoverPath) <= 0.45 &&
-      publicMediaPayloadMb() <= 72 &&
+      publicMediaPayloadMb() <= 70 &&
       !existsSync(projectCoverPath) &&
       !existsSync(unusedHeroSourcePath) &&
       !existsSync(unusedHeroInterpolatedPath) &&
@@ -120,7 +120,12 @@ const checks = [
   },
   {
     label: "Hero keeps background playback smooth",
-    pass: /playbackRate\s*=\s*0\.85/.test(source),
+    pass:
+      /playbackRate\s*=\s*1(?:\.0)?\s*;/.test(source) &&
+      !/playbackRate\s*=\s*0\.[0-9]+/.test(source) &&
+      !/filter\s*:/m.test(heroVideoStyles) &&
+      !/\.motion-preload\s+\.heroVideo/m.test(styles) &&
+      !motionSource.includes(".heroVideo"),
   },
   {
     label: "Hero video element uses the ref",
@@ -194,9 +199,9 @@ const checks = [
       !posterBeamStyles.includes("168, 85, 247"),
   },
   {
-    label: "Hero video renders as neutral grayscale without purple blend tint",
+    label: "Hero video avoids runtime filter work while keeping neutral blend",
     pass:
-      /filter:\s*grayscale\(1\)/m.test(heroVideoStyles) &&
+      !/filter\s*:/m.test(heroVideoStyles) &&
       /mix-blend-mode:\s*normal;/m.test(heroVideoStyles) &&
       !/mix-blend-mode:\s*luminosity;/m.test(heroVideoStyles) &&
       /mask-image:\s*linear-gradient\(180deg,\s*#000\s*0%/m.test(heroVideoStyles) &&
@@ -655,9 +660,9 @@ const failed = checks.filter((check) => !check.pass);
 if (failed.length === 0) {
   const videoInfo = inspectVideo(fileURLToPath(heroVideoPath));
 
-  if (videoInfo.width > 1920) {
+  if (videoInfo.width > 1280) {
     failed.push({
-      label: `Hero video is too large for smooth first paint: ${videoInfo.width} > 1920`,
+      label: `Hero video is too large for smooth first paint: ${videoInfo.width} > 1280`,
     });
   }
 

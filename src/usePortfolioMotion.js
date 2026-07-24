@@ -42,10 +42,6 @@ export function usePortfolioMotion() {
           autoAlpha: 0,
           y: 34,
         });
-        gsap.set(".heroVideo", {
-          scale: 1.045,
-          transformOrigin: "50% 50%",
-        });
 
         document.querySelectorAll("[data-motion-section]").forEach((section) => {
           const sectionTitle = section.querySelector("[data-motion='section-title']");
@@ -103,15 +99,6 @@ export function usePortfolioMotion() {
             ease: "expo.inOut",
           })
           .to(
-            ".heroVideo",
-            {
-              scale: 1,
-              duration: 2.8,
-              ease: "power3.out",
-            },
-            0.08,
-          )
-          .to(
             heroTitleSelector,
             {
               autoAlpha: 1,
@@ -131,18 +118,6 @@ export function usePortfolioMotion() {
             },
             1.18,
           );
-
-
-        gsap.to(".heroVideo", {
-          yPercent: 8,
-          ease: "none",
-          scrollTrigger: {
-            trigger: ".hero",
-            start: "top top",
-            end: "bottom top",
-            scrub: 0.85,
-          },
-        });
 
         document.querySelectorAll("[data-motion-section]").forEach((section) => {
           const sectionTitle = section.querySelector("[data-motion='section-title']");

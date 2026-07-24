@@ -149,7 +149,6 @@ a {
 }
 
 .heroVideo {
-  filter: grayscale(1) brightness(0.78) contrast(1.26) saturate(0);
   mask-image: linear-gradient(180deg, #000 0%, #000 54%, rgba(0, 0, 0, 0.72) 74%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 54%, rgba(0, 0, 0, 0.72) 74%, transparent 100%);
   mix-blend-mode: normal;
@@ -1320,11 +1319,6 @@ a {
   .motion-preload .openingCurtain {
     opacity: 1;
     clip-path: inset(0% 0% 0% 0%);
-  }
-
-  .motion-preload .heroVideo {
-    transform: scale(1.045);
-    transform-origin: 50% 50%;
   }
 
   .motion-preload .heroTitleLine {

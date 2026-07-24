@@ -245,7 +245,7 @@ function Hero({ isBackgroundPaused }) {
     }
 
     const smoothPlayback = () => {
-      video.playbackRate = 0.85;
+      video.playbackRate = 1;
     };
 
     smoothPlayback();
