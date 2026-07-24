@@ -56,6 +56,12 @@ const particlesCss = existsSync(particlesCssPath) ? readFileSync(particlesCssPat
 const motionPath = new URL("../src/usePortfolioMotion.js", import.meta.url);
 const motionSource = existsSync(motionPath) ? readFileSync(motionPath, "utf8") : "";
 const heroVideoStyles = styles.match(/\.heroVideo\s*\{([^}]*)\}/)?.[1] || "";
+const heroVideoActiveStyles = styles.match(/\.heroVideo\.isActive\s*\{([^}]*)\}/)?.[1] || "";
+const heroVideoStageStyles = styles.match(/\.heroVideoStage\s*\{([^}]*)\}/)?.[1] || "";
+const heroVideoPrimaryStyles =
+  styles.match(/\.heroVideoPrimary\s*\{([^}]*)\}/)?.[1] || "";
+const heroVideoSecondaryStyles =
+  styles.match(/\.heroVideoSecondary\s*\{([^}]*)\}/)?.[1] || "";
 const heroStyles = styles.match(/\.hero\s*\{([^}]*)\}/)?.[1] || "";
 const heroBlendStyles = styles.match(/\.heroBlend\s*\{([^}]*)\}/)?.[1] || "";
 const heroAfterStyles = styles.match(/\.hero::after\s*\{([^}]*)\}/)?.[1] || "";
@@ -115,8 +121,11 @@ const checks = [
       /import\s*\{[^}]*useState[^}]*\}\s*from\s*["']react["'];/.test(source),
   },
   {
-    label: "Hero creates a videoRef",
-    pass: /const\s+videoRef\s*=\s*useRef\(null\);/.test(source),
+    label: "Hero creates paired video refs",
+    pass:
+      source.includes("const videoRefs = useRef([]);") &&
+      source.includes("videoRefs.current[0]") &&
+      source.includes("videoRefs.current[1]"),
   },
   {
     label: "Hero keeps background playback smooth",
@@ -128,8 +137,33 @@ const checks = [
       !motionSource.includes(".heroVideo"),
   },
   {
-    label: "Hero video element uses the ref",
-    pass: /<video[\s\S]*ref=\{videoRef\}/.test(source),
+    label: "Hero video elements use paired refs",
+    pass:
+      /<video[\s\S]*videoRefs\.current\[0\]\s*=\s*node/.test(source) &&
+      /<video[\s\S]*videoRefs\.current\[1\]\s*=\s*node/.test(source),
+  },
+  {
+    label: "Hero loops with paired crossfading video layers",
+    pass:
+      source.includes('className="heroVideoStage"') &&
+      source.includes("heroVideo heroVideoPrimary") &&
+      source.includes("heroVideo heroVideoSecondary") &&
+      source.includes("loop={false}") &&
+      source.includes("crossfadeDuration") &&
+      source.includes("animateCrossfade") &&
+      source.includes("previousVideo.style.opacity") &&
+      source.includes("nextVideo.style.opacity") &&
+      source.includes("window.requestAnimationFrame(fadeFrame)") &&
+      source.includes("window.requestAnimationFrame(monitor)") &&
+      styles.includes(".heroVideoStage") &&
+      styles.includes(".heroVideoPrimary") &&
+      styles.includes(".heroVideoSecondary") &&
+      /will-change:\s*opacity/m.test(heroVideoStyles) &&
+      /opacity:\s*0;/m.test(heroVideoStyles) &&
+      /opacity:\s*1;/m.test(heroVideoActiveStyles) &&
+      /z-index:\s*-3;/m.test(heroVideoStageStyles) &&
+      /z-index:\s*1;/m.test(heroVideoPrimaryStyles) &&
+      /z-index:\s*0;/m.test(heroVideoSecondaryStyles),
   },
   {
     label: "Hero pauses background video while project video modal is open",
@@ -138,7 +172,7 @@ const checks = [
       source.includes("function Hero({ isBackgroundPaused })") &&
       source.includes("if (isBackgroundPaused)") &&
       source.includes("video.pause()") &&
-      source.includes("video.play().catch"),
+      source.includes("activeVideo?.play().catch"),
   },
   {
     label: "Hero uses the local Earth video asset",

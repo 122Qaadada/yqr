@@ -235,57 +235,224 @@ function SectionRays() {
 }
 
 function Hero({ isBackgroundPaused }) {
-  const videoRef = useRef(null);
+  const videoRefs = useRef([]);
+  const activeVideoIndexRef = useRef(0);
+  const transitionRef = useRef({ previousIndex: null, nextIndex: null, rafId: null });
+  const monitorRafRef = useRef(0);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const crossfadeDuration = 0.96;
+  const crossfadeLead = 1.1;
 
   useEffect(() => {
-    const video = videoRef.current;
+    const getVideo = (index) => videoRefs.current[index] ?? null;
+    const pauseVideo = (video) => {
+      if (!video) {
+        return;
+      }
 
-    if (!video) {
+      video.pause();
+    };
+    const resetVideo = (video) => {
+      if (!video) {
+        return;
+      }
+
+      video.pause();
+
+      try {
+        video.currentTime = 0;
+      } catch {
+        // Some browsers reject immediate seeks until metadata is ready.
+      }
+    };
+    const clearTransition = () => {
+      if (transitionRef.current.rafId !== null) {
+        window.cancelAnimationFrame(transitionRef.current.rafId);
+      }
+
+      transitionRef.current = { previousIndex: null, nextIndex: null, rafId: null };
+    };
+    const finalizeTransition = () => {
+      const { previousIndex, nextIndex } = transitionRef.current;
+
+      if (previousIndex !== null && nextIndex !== null) {
+        const previousVideo = getVideo(previousIndex);
+        const nextVideo = getVideo(nextIndex);
+
+        if (nextVideo) {
+          nextVideo.style.opacity = "1";
+        }
+
+        if (previousVideo) {
+          previousVideo.style.opacity = "0";
+          resetVideo(previousVideo);
+        }
+
+        activeVideoIndexRef.current = nextIndex;
+        setActiveVideoIndex(nextIndex);
+      }
+
+      clearTransition();
+    };
+    const setPlaybackRates = () => {
+      videoRefs.current.forEach((video) => {
+        if (video) {
+          video.playbackRate = 1;
+        }
+      });
+    };
+    const animateCrossfade = (previousVideo, nextVideo, previousIndex, nextIndex) => {
+      const startedAt = performance.now();
+      previousVideo.style.opacity = "1";
+      nextVideo.style.opacity = "0";
+
+      const fadeFrame = (now) => {
+        if (
+          transitionRef.current.previousIndex !== previousIndex ||
+          transitionRef.current.nextIndex !== nextIndex
+        ) {
+          return;
+        }
+
+        const progress = Math.min((now - startedAt) / (crossfadeDuration * 1000), 1);
+        previousVideo.style.opacity = String(1 - progress);
+        nextVideo.style.opacity = String(progress);
+
+        if (progress < 1) {
+          transitionRef.current.rafId = window.requestAnimationFrame(fadeFrame);
+          return;
+        }
+
+        finalizeTransition();
+      };
+
+      transitionRef.current.rafId = window.requestAnimationFrame(fadeFrame);
+    };
+    const beginCrossfade = () => {
+      if (transitionRef.current.previousIndex !== null) {
+        return;
+      }
+
+      const previousIndex = activeVideoIndexRef.current;
+      const nextIndex = 1 - previousIndex;
+      const previousVideo = getVideo(previousIndex);
+      const nextVideo = getVideo(nextIndex);
+
+      if (!previousVideo || !nextVideo) {
+        return;
+      }
+
+      transitionRef.current = { previousIndex, nextIndex, rafId: null };
+      nextVideo.playbackRate = 1;
+
+      try {
+        nextVideo.currentTime = 0;
+      } catch {
+        // Some browsers require playback metadata before seeking.
+      }
+
+      const startFade = () => {
+        if (
+          transitionRef.current.previousIndex === previousIndex &&
+          transitionRef.current.nextIndex === nextIndex
+        ) {
+          animateCrossfade(previousVideo, nextVideo, previousIndex, nextIndex);
+        }
+      };
+      const playPromise = nextVideo.play();
+
+      if (playPromise && typeof playPromise.then === "function") {
+        playPromise.then(startFade).catch(() => {
+          resetVideo(nextVideo);
+          clearTransition();
+        });
+        return;
+      }
+
+      startFade();
+    };
+    const monitor = () => {
+      const activeVideo = getVideo(activeVideoIndexRef.current);
+
+      if (
+        !isBackgroundPaused &&
+        activeVideo &&
+        Number.isFinite(activeVideo.duration) &&
+        activeVideo.duration > 0 &&
+        !activeVideo.paused &&
+        !activeVideo.ended
+      ) {
+        const remaining = activeVideo.duration - activeVideo.currentTime;
+
+        if (remaining <= crossfadeLead) {
+          beginCrossfade();
+        }
+      }
+
+      monitorRafRef.current = window.requestAnimationFrame(monitor);
+    };
+
+    setPlaybackRates();
+
+    if (isBackgroundPaused) {
+      finalizeTransition();
+      videoRefs.current.forEach(pauseVideo);
       return undefined;
     }
 
-    const smoothPlayback = () => {
-      video.playbackRate = 1;
-    };
+    const activeVideo = getVideo(activeVideoIndexRef.current);
+    const inactiveVideo = getVideo(1 - activeVideoIndexRef.current);
 
-    smoothPlayback();
-    video.addEventListener("loadedmetadata", smoothPlayback);
+    if (activeVideo) {
+      activeVideo.style.opacity = "1";
+    }
+
+    if (inactiveVideo) {
+      inactiveVideo.style.opacity = "0";
+    }
+
+    activeVideo?.play().catch(() => undefined);
+    pauseVideo(inactiveVideo);
+    monitorRafRef.current = window.requestAnimationFrame(monitor);
 
     return () => {
-      video.removeEventListener("loadedmetadata", smoothPlayback);
+      window.cancelAnimationFrame(monitorRafRef.current);
+      finalizeTransition();
+      videoRefs.current.forEach(pauseVideo);
     };
-  }, []);
-
-  useEffect(() => {
-    const video = videoRef.current;
-
-    if (!video) {
-      return;
-    }
-
-    if (isBackgroundPaused) {
-      video.pause();
-      return;
-    }
-
-    video.play().catch(() => undefined);
   }, [isBackgroundPaused]);
 
   return (
     <section className="hero" id="home">
-      <video
-        ref={videoRef}
-        className="heroVideo"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        fetchPriority="high"
-        poster="/media/hero-earth-poster.jpg"
-      >
-        <source src="/media/hero-earth.mp4" type="video/mp4" />
-      </video>
+      <div className="heroVideoStage" aria-hidden="true">
+        <video
+          ref={(node) => {
+            videoRefs.current[0] = node;
+          }}
+          className={`heroVideo heroVideoPrimary ${activeVideoIndex === 0 ? "isActive" : ""}`}
+          autoPlay
+          muted
+          loop={false}
+          playsInline
+          preload="auto"
+          fetchPriority="high"
+          poster="/media/hero-earth-poster.jpg"
+        >
+          <source src="/media/hero-earth.mp4" type="video/mp4" />
+        </video>
+        <video
+          ref={(node) => {
+            videoRefs.current[1] = node;
+          }}
+          className={`heroVideo heroVideoSecondary ${activeVideoIndex === 1 ? "isActive" : ""}`}
+          muted
+          loop={false}
+          playsInline
+          preload="auto"
+        >
+          <source src="/media/hero-earth.mp4" type="video/mp4" />
+        </video>
+      </div>
       <div className="videoFallback" aria-hidden="true" />
       <div className="posterGate" aria-hidden="true" />
       <div className="posterBeam" aria-hidden="true" />
@@ -349,7 +516,6 @@ function Hero({ isBackgroundPaused }) {
     </section>
   );
 }
-
 function About() {
   return (
     <section className="section about" id="about" data-motion-section>
