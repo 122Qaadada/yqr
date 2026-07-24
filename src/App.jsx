@@ -237,11 +237,11 @@ function SectionRays() {
 function Hero({ isBackgroundPaused }) {
   const videoRefs = useRef([]);
   const activeVideoIndexRef = useRef(0);
-  const transitionRef = useRef({ previousIndex: null, nextIndex: null, rafId: null });
+  const transitionRef = useRef({ previousIndex: null, nextIndex: null, rafId: null, timeoutId: null });
   const monitorRafRef = useRef(0);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-  const crossfadeDuration = 0.96;
-  const crossfadeLead = 1.1;
+  const crossfadeDuration = 0.72;
+  const loopSeamFadeWindow = crossfadeDuration;
 
   useEffect(() => {
     const getVideo = (index) => videoRefs.current[index] ?? null;
@@ -270,7 +270,11 @@ function Hero({ isBackgroundPaused }) {
         window.cancelAnimationFrame(transitionRef.current.rafId);
       }
 
-      transitionRef.current = { previousIndex: null, nextIndex: null, rafId: null };
+      if (transitionRef.current.timeoutId !== null) {
+        window.clearTimeout(transitionRef.current.timeoutId);
+      }
+
+      transitionRef.current = { previousIndex: null, nextIndex: null, rafId: null, timeoutId: null };
     };
     const finalizeTransition = () => {
       const { previousIndex, nextIndex } = transitionRef.current;
@@ -280,10 +284,12 @@ function Hero({ isBackgroundPaused }) {
         const nextVideo = getVideo(nextIndex);
 
         if (nextVideo) {
+          nextVideo.style.transition = "";
           nextVideo.style.opacity = "1";
         }
 
         if (previousVideo) {
+          previousVideo.style.transition = "";
           previousVideo.style.opacity = "0";
           resetVideo(previousVideo);
         }
@@ -302,11 +308,7 @@ function Hero({ isBackgroundPaused }) {
       });
     };
     const animateCrossfade = (previousVideo, nextVideo, previousIndex, nextIndex) => {
-      const startedAt = performance.now();
-      previousVideo.style.opacity = "1";
-      nextVideo.style.opacity = "0";
-
-      const fadeFrame = (now) => {
+      const finishFade = () => {
         if (
           transitionRef.current.previousIndex !== previousIndex ||
           transitionRef.current.nextIndex !== nextIndex
@@ -314,19 +316,23 @@ function Hero({ isBackgroundPaused }) {
           return;
         }
 
-        const progress = Math.min((now - startedAt) / (crossfadeDuration * 1000), 1);
-        previousVideo.style.opacity = String(1 - progress);
-        nextVideo.style.opacity = String(progress);
-
-        if (progress < 1) {
-          transitionRef.current.rafId = window.requestAnimationFrame(fadeFrame);
-          return;
-        }
-
         finalizeTransition();
       };
 
-      transitionRef.current.rafId = window.requestAnimationFrame(fadeFrame);
+      previousVideo.style.transition = "none";
+      nextVideo.style.transition = "none";
+      previousVideo.style.opacity = "1";
+      nextVideo.style.opacity = "0";
+
+      // Flush the starting opacity before enabling the compositor transition.
+      previousVideo.offsetWidth;
+
+      const transition = "opacity " + crossfadeDuration + "s linear";
+      previousVideo.style.transition = transition;
+      nextVideo.style.transition = transition;
+      previousVideo.style.opacity = "0";
+      nextVideo.style.opacity = "1";
+      transitionRef.current.timeoutId = window.setTimeout(finishFade, crossfadeDuration * 1000 + 80);
     };
     const beginCrossfade = () => {
       if (transitionRef.current.previousIndex !== null) {
@@ -342,7 +348,7 @@ function Hero({ isBackgroundPaused }) {
         return;
       }
 
-      transitionRef.current = { previousIndex, nextIndex, rafId: null };
+      transitionRef.current = { previousIndex, nextIndex, rafId: null, timeoutId: null };
       nextVideo.playbackRate = 1;
 
       try {
@@ -360,16 +366,15 @@ function Hero({ isBackgroundPaused }) {
         }
       };
       const playPromise = nextVideo.play();
+      startFade();
 
       if (playPromise && typeof playPromise.then === "function") {
-        playPromise.then(startFade).catch(() => {
+        playPromise.catch(() => {
           resetVideo(nextVideo);
           clearTransition();
         });
         return;
       }
-
-      startFade();
     };
     const monitor = () => {
       const activeVideo = getVideo(activeVideoIndexRef.current);
@@ -378,13 +383,12 @@ function Hero({ isBackgroundPaused }) {
         !isBackgroundPaused &&
         activeVideo &&
         Number.isFinite(activeVideo.duration) &&
-        activeVideo.duration > 0 &&
-        !activeVideo.paused &&
-        !activeVideo.ended
+        activeVideo.duration > 0
       ) {
-        const remaining = activeVideo.duration - activeVideo.currentTime;
+        const isAtLoopSeam =
+          activeVideo.ended || activeVideo.currentTime >= activeVideo.duration - loopSeamFadeWindow;
 
-        if (remaining <= crossfadeLead) {
+        if (isAtLoopSeam) {
           beginCrossfade();
         }
       }

@@ -150,10 +150,17 @@ const checks = [
       source.includes("heroVideo heroVideoSecondary") &&
       source.includes("loop={false}") &&
       source.includes("crossfadeDuration") &&
+      source.includes("loopSeamFadeWindow") &&
+      source.includes("activeVideo.ended") &&
+      source.includes("activeVideo.duration - loopSeamFadeWindow") &&
+      !source.includes("crossfadeLead") &&
       source.includes("animateCrossfade") &&
       source.includes("previousVideo.style.opacity") &&
       source.includes("nextVideo.style.opacity") &&
-      source.includes("window.requestAnimationFrame(fadeFrame)") &&
+      source.includes("previousVideo.style.transition") &&
+      source.includes("nextVideo.style.transition") &&
+      source.includes("window.setTimeout(finishFade") &&
+      source.includes("previousVideo.offsetWidth") &&
       source.includes("window.requestAnimationFrame(monitor)") &&
       styles.includes(".heroVideoStage") &&
       styles.includes(".heroVideoPrimary") &&
