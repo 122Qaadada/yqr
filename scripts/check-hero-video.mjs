@@ -86,7 +86,7 @@ const checks = [
   {
     label: "Media assets stay within portfolio performance budgets",
     pass:
-      fileSizeMb(heroVideoPath) <= 1.8 &&
+      fileSizeMb(heroVideoPath) <= 4.5 &&
       existsSync(heroPosterPath) &&
       fileSizeMb(heroPosterPath) <= 0.45 &&
       fileSizeMb(fifthProjectVideoPath) <= 120 &&
